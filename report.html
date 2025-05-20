@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory Reports</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Sidebar -->
+  <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white shadow-md z-30 -translate-x-full md:translate-x-0">
+    <div class="p-6">
+      <h1 class="text-2xl font-bold text-gray-800">InventorySys</h1>
+    </div>
+    <nav class="mt-6">
+      <a href="dashboard.html" class="block py-2.5 px-4 rounded hover:bg-gray-200">Dashboard</a>
+      <a href="purchase.html" class="block py-2.5 px-4 rounded hover:bg-gray-200">Purchases</a>
+      <a href="sales.html" class="block py-2.5 px-4 rounded hover:bg-gray-200">Sales</a>
+      <a href="report.html" class="block py-2.5 px-4 rounded bg-gray-200 text-gray-900 font-bold">Reports</a>
+      <a href="settings.html" class="block py-2.5 px-4 rounded hover:bg-gray-200">Settings</a>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="md:ml-64 flex flex-col flex-1">
+    <!-- Header -->
+    <header class="flex items-center justify-between bg-white p-4 shadow-md">
+      <h2 class="text-2xl font-semibold text-gray-800">Reports</h2>
+    </header>
+
+    <!-- Report Section -->
+    <main class="p-6 space-y-6">
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white p-4 rounded-lg shadow">
+          <h3 class="text-sm text-gray-500">Total Products</h3>
+          <p class="text-2xl font-bold text-gray-800">120</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow">
+          <h3 class="text-sm text-gray-500">Total Sales</h3>
+          <p class="text-2xl font-bold text-gray-800">₨25,000</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow">
+          <h3 class="text-sm text-gray-500">Total Purchases</h3>
+          <p class="text-2xl font-bold text-gray-800">₨18,000</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow">
+          <h3 class="text-sm text-gray-500">Net Profit</h3>
+          <p class="text-2xl font-bold text-green-600">₨7,000</p>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Sales Trend -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h3 class="text-lg font-semibold mb-4">Sales Trend</h3>
+          <canvas id="salesTrendChart"></canvas>
+        </div>
+
+        <!-- Purchases Trend -->
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h3 class="text-lg font-semibold mb-4">Purchases Trend</h3>
+          <canvas id="purchasesTrendChart"></canvas>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Charts Script -->
+  <script>
+    // Sales Trend
+    const salesCtx = document.getElementById('salesTrendChart').getContext('2d');
+    new Chart(salesCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+        datasets: [{
+          label: 'Sales',
+          data: [4000, 5000, 3000, 6000, 7000],
+          backgroundColor: 'rgba(59, 130, 246, 0.6)',
+          borderColor: 'rgba(59, 130, 246, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: 'Monthly Sales' }
+        }
+      }
+    });
+
+    // Purchases Trend
+    const purchasesCtx = document.getElementById('purchasesTrendChart').getContext('2d');
+    new Chart(purchasesCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+        datasets: [{
+          label: 'Purchases',
+          data: [3000, 3500, 4000, 3500, 5000],
+          backgroundColor: 'rgba(34, 197, 94, 0.2)',
+          borderColor: 'rgba(34, 197, 94, 1)',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: 'Monthly Purchases' }
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>
