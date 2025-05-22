@@ -20,14 +20,14 @@ const signUpForm = document.getElementById("signupForm");
 const loginForm = document.getElementById("loginForm");
  const go=document.querySelector('.go')
 // Show or hide loader
-export const toggleLoader = (show) => {
+ const toggleLoader = (show) => {
   loader.classList.toggle("hidden", !show);
 };
 
 // 🔐 Check if user is logged in and redirect appropriately
 const emailVerifyMsg = document.getElementById("emailVerifyMsg");
 
- export const checkUserLogin = () => {
+ const checkUserLogin = () => {
   onAuthStateChanged(auth, async (user) => {
     toggleLoader(true);
 
@@ -47,7 +47,6 @@ const emailVerifyMsg = document.getElementById("emailVerifyMsg");
       toggleLoader(false);
       return;
     }
-
     try {
       const [isAdmin, isUser] = await Promise.all([
         checkUserRole("admin", user.email),
@@ -170,3 +169,7 @@ if (loginForm) {
   // Run this manually when you want to migrate admin docs
 //   migrateAdminDocsToUid();
 });
+ export {
+  checkUserRole,
+  toggleLoader,
+ }
