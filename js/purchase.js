@@ -1,196 +1,199 @@
+import { toggleLoader } from "./auth.js";
 import {
-  toggleLoader,
-  checkUserRole,
-} from "./auth.js";
-
-import {
-  auth,
-  onAuthStateChanged,
-  db,
-  doc,
-  getDoc,
-  getDocs, // ✅ Missing import added
-  setDoc,
-  updateDoc,
-  arrayUnion,
-  collection,
-  addDoc,
-  serverTimestamp,
-  query,
-  where,
-  onSnapshot,
-  Timestamp,
+  auth, onAuthStateChanged, db, doc, getDoc, getDocs,
+  setDoc, updateDoc, arrayUnion, collection, addDoc,
+  serverTimestamp, query, where, onSnapshot, Timestamp
 } from "./firebase.js";
 
-// ✅ Move global variables outside so other functions can access them
-let purchaseTable, purchaseTableBody;
+// 🔹 Globals
+let userId, purchaseTableBody;
+let isEditMode = false;
+let editData = null;
 
 const getCurrentMonthKey = (date = new Date()) =>
   `${date.toLocaleString("default", { month: "short" })}-${date.getFullYear()}`;
 
-const addPurchaseItemToDb = async ({
-  supplier,
-  product,
-  category,
-  quantity,
-  amount,
-  date,
-  nextId,
-}) => {
-  try {
-    const purchaseRef = doc(db, "purchase", supplier);
-    const purchaseSnap = await getDoc(purchaseRef);
+const formatDate = (date) =>
+  date instanceof Timestamp ? date.toDate().toLocaleDateString() : date;
 
-    // Remove createdAt from the purchase item inside the array
-    const newPurchase = {
-      id: nextId,
-      product,
-      category,
-      quantity: Number(quantity),
-      amount: Number(amount),
+const renderOnUI = (data) => {
+  const tr = document.createElement("tr");
+  tr.className = "border-b hover:bg-gray-100";
+  tr.innerHTML = `
+  <tr class="border-b hover:bg-gray-50 transition-colors">
+  <td class="py-3 px-4 sm:px-6 text-sm sm:text-base whitespace-nowrap">${data.id}</td>
+  <td class="py-3 px-4 sm:px-6 text-sm sm:text-base whitespace-nowrap">${data.supplier}</td>
+  <td class="py-3 px-4 sm:px-6 text-sm sm:text-base whitespace-nowrap">${data.product}</td>
+  <td class="py-3 px-4 sm:px-6 text-sm sm:text-base whitespace-nowrap">${data.category}</td>
+  <td class="py-3 px-4 sm:px-6 text-sm sm:text-base text-center whitespace-nowrap">${data.quantity}</td>
+  <td class="py-3 px-4 sm:px-6 text-sm sm:text-base text-center whitespace-nowrap">₨${parseFloat(data.amount).toLocaleString()}</td>
+  <td class="py-3 px-4 sm:px-6 text-sm sm:text-base text-center whitespace-nowrap">${formatDate(data.date)}</td>
+  <td class="py-3 px-4 sm:px-6 text-sm sm:text-base text-center whitespace-nowrap">
+    <div class="flex justify-center items-center space-x-2">
+      <button class="text-blue-500 hover:text-blue-700 edit-btn" data-fireid="${data.fireId}" data-purchaseid="${data.id}">
+        ✏️
+      </button>
+      <button class="text-red-500 hover:text-red-700 delete-btn" data-fireid="${data.fireId}" data-purchaseid="${data.id}">
+        🗑️
+      </button>
+    </div>
+  </td>
+</tr>
+  `;
+  purchaseTableBody.appendChild(tr);
+};
+
+const addPurchaseItemToDb = async ({ supplier, product, category, quantity, amount, date, nextId }) => {
+  const purchaseRef = doc(db, "users", userId, "purchase", supplier);
+  const newPurchase = {
+    id: nextId,
+    product,
+    category,
+    quantity: Number(quantity),
+    amount: Number(amount),
+    date: Timestamp.fromDate(new Date(date)),
+  };
+
+  const purchaseSnap = await getDoc(purchaseRef);
+  if (purchaseSnap.exists()) {
+    await updateDoc(purchaseRef, { purchases: arrayUnion(newPurchase) });
+  } else {
+    await setDoc(purchaseRef, {
+      supplier,
+      createdAt: serverTimestamp(),
+      purchases: [newPurchase],
+    });
+  }
+
+  const monthKey = getCurrentMonthKey(new Date(date));
+  const categoryCol = collection(db, "users", userId, "products", category, monthKey);
+  const q = query(categoryCol, where("product", "==", product), where("supplier", "==", supplier));
+  const querySnapshot = await getDocs(q);
+  if (querySnapshot.empty) {
+    await addDoc(categoryCol, {
+      product, supplier, quantity: Number(quantity),
       date: Timestamp.fromDate(new Date(date)),
-      // createdAt: serverTimestamp(), // Remove this here
-    };
-
-    if (purchaseSnap.exists()) {
-      await updateDoc(purchaseRef, {
-        purchases: arrayUnion(newPurchase),
-      });
-    } else {
-      // Here, set the timestamp at document root level, NOT inside array
-      await setDoc(purchaseRef, {
-        supplier,
-        createdAt: serverTimestamp(), // Add here
-        purchases: [newPurchase],
-      });
-    }
-
-    // Add product by category/month if not exists
-    const monthKey = getCurrentMonthKey(new Date(date));
-    const categoryCol = collection(db, "products", category, monthKey);
-
-    const q = query(
-      categoryCol,
-      where("product", "==", product),
-      where("supplier", "==", supplier)
-    );
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      await addDoc(categoryCol, {
-        product,
-        supplier,
-        quantity: Number(quantity),
-        date: Timestamp.fromDate(new Date(date)),
-        addedAt: serverTimestamp(),
-      });
-    }
-
-    console.log("Purchase added successfully!");
-  } catch (error) {
-    console.error("Failed to add purchase:", error);
-    alert("Failed to save purchase. Try again.");
+      addedAt: serverTimestamp(),
+    });
   }
 };
 
+const fetchAndRenderPurchases = async () => {
+  purchaseTableBody.innerHTML = "";
+  const snapshot = await getDocs(collection(db, "users", userId, "purchase"));
+  const allPurchases = [];
 
-function renderOnUI(data) {
-  const tr = document.createElement("tr");
-  tr.className = "border-b hover:bg-gray-100";
-
-  const formattedDate = data.date instanceof Timestamp
-    ? data.date.toDate().toLocaleDateString()
-    : data.date;
-
-  tr.innerHTML = `
-    <td class="py-3 px-6">${data.id}</td>
-    <td class="py-3 px-6">${data.supplier}</td>
-    <td class="py-3 px-6">${data.product}</td>
-    <td class="py-3 px-6">${data.category}</td>
-    <td class="py-3 px-6 text-center">${data.quantity}</td>
-    <td class="py-3 px-6 text-center">₨${parseFloat(data.amount).toLocaleString()}</td>
-    <td class="py-3 px-6 text-center">${formattedDate}</td>
-    <td class="py-3 px-6 text-center">
-      <div class="flex justify-center items-center space-x-2">
-        <button title="Edit" class="text-blue-500 hover:text-blue-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-               viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M16.5 3.5a2.121 2.121 0 113 3L12 14l-4 1 1-4 7.5-7.5z" />
-          </svg>
-        </button>
-        <button title="Delete" class="text-red-500 hover:text-red-700 delete-btn" data-id="${data.fireId}">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-               viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a1 1 0 011 1v1H9V4a1 1 0 011-1zM4 7h16" />
-          </svg>
-        </button>
-      </div>
-    </td>
-  `;
-
-  purchaseTableBody.appendChild(tr);
-}
-
-async function fetchAndRenderPurchases() {
-  purchaseTableBody.innerHTML = ""; // ✅ Fixed to clear tbody, not the entire table
-  const snapshot = await getDocs(collection(db, "purchase"));
-
-  let index = 1;
-  snapshot.forEach((docSnap) => {
+  snapshot.forEach(docSnap => {
     const docData = docSnap.data();
-    const purchases = docData.purchases || [];
-
-    purchases.forEach((item) => {
-      renderOnUI({
-        ...item,
-        supplier: docData.supplier,
-        fireId: docSnap.id,
-        id: item.id || `#P-${index++}`,
-      });
-    });
+    (docData.purchases || []).forEach(item =>
+      allPurchases.push({ ...item, supplier: docData.supplier, fireId: docSnap.id })
+    );
   });
-}
 
-const checkUserLogin = () => {
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      window.location.href = "/auth.html";
-      return;
-    }
-    if (!user.email) {
-  alert("User email not found. Please login with email.");
-  window.location.href = "/auth.html";
-  return;
-}
-    try {
-      const [isAdmin, isUser] = await Promise.all([
-        checkUserRole("admin", user.email),
-        checkUserRole("users", user.email),
-      ]);
-
-      if (isAdmin && window.location.pathname.includes("/auth.html")) {
-        window.location.href = "/dashboard.html";
-      } else if (isUser && window.location.pathname.includes("/auth.html")) {
-        window.location.href = "/user.html";
-      } else if (!isAdmin && !isUser) {
-        window.location.href = "/auth.html";
-      }
-
-    try {
-  await fetchAndRenderPurchases();
-}catch(err){
-  console.error(err);
-}; // ✅ Wait to finish fetching before proceeding
-    } catch {
-      alert("Authentication error");
-    } finally {
-      toggleLoader(false);
-    }
+  allPurchases.sort((a, b) => b.date.toDate() - a.date.toDate());
+  allPurchases.forEach((item, index) => {
+    renderOnUI({ ...item, id: item.id || `#P-${index + 1}` });
   });
 };
 
+
+const editPurchaseItem = async (supplierId, purchaseId, updatedData) => {
+  const purchaseRef = doc(db, "users", userId, "purchase", supplierId);
+  const purchaseSnap = await getDoc(purchaseRef);
+  if (!purchaseSnap.exists()) return alert("Purchase not found.");
+
+  const oldPurchase = purchaseSnap.data().purchases.find(p => p.id === purchaseId);
+  const updatedPurchases = purchaseSnap.data().purchases.map(p =>
+    p.id === purchaseId ? { ...p, ...updatedData } : p
+  );
+
+  await updateDoc(purchaseRef, { purchases: updatedPurchases });
+
+  // Update `products` collection
+  const oldMonth = getCurrentMonthKey(oldPurchase.date.toDate());
+  const newMonth = getCurrentMonthKey(updatedData.date.toDate ? updatedData.date.toDate() : new Date(updatedData.date));
+
+  const oldCategoryCol = collection(db, "users", userId, "products", oldPurchase.category, oldMonth);
+  const newCategoryCol = collection(db, "users", userId, "products", updatedData.category, newMonth);
+
+  const qOld = query(oldCategoryCol, where("product", "==", oldPurchase.product), where("supplier", "==", supplierId));
+  const qNew = query(newCategoryCol, where("product", "==", updatedData.product), where("supplier", "==", supplierId));
+
+  const oldSnap = await getDocs(qOld);
+  const newSnap = await getDocs(qNew);
+
+  if (!oldSnap.empty) {
+    const docRef = oldSnap.docs[0].ref;
+    await updateDoc(docRef, { quantity: Number(updatedData.quantity) });
+  }
+
+  if (oldPurchase.product !== updatedData.product || oldPurchase.category !== updatedData.category || oldMonth !== newMonth) {
+    // Optionally handle movement across categories/months
+    await addDoc(newCategoryCol, {
+      product: updatedData.product,
+      supplier: supplierId,
+      quantity: Number(updatedData.quantity),
+      date: Timestamp.fromDate(new Date(updatedData.date)),
+      addedAt: serverTimestamp()
+    });
+  }
+
+  alert("Updated successfully");
+};
+
+const deletePurchaseItem = async (supplierId, purchaseId) => {
+  const purchaseRef = doc(db, "users", userId, "purchase", supplierId);
+  const purchaseSnap = await getDoc(purchaseRef);
+  if (!purchaseSnap.exists()) return;
+
+  const allPurchases = purchaseSnap.data().purchases || [];
+  const purchaseToDelete = allPurchases.find(p => p.id === purchaseId);
+  const filteredPurchases = allPurchases.filter(p => p.id !== purchaseId);
+
+  await updateDoc(purchaseRef, { purchases: filteredPurchases });
+
+  // Update `products` collection
+  const monthKey = getCurrentMonthKey(purchaseToDelete.date.toDate());
+  const categoryCol = collection(db, "users", userId, "products", purchaseToDelete.category, monthKey);
+  const q = query(categoryCol, where("product", "==", purchaseToDelete.product), where("supplier", "==", supplierId));
+  const snap = await getDocs(q);
+
+  if (!snap.empty) {
+    const productRef = snap.docs[0].ref;
+    const currentQty = snap.docs[0].data().quantity;
+
+    // Adjust quantity or delete the product record if zero
+    const remainingQty = currentQty - purchaseToDelete.quantity;
+    if (remainingQty > 0) {
+      await updateDoc(productRef, { quantity: remainingQty });
+    } else {
+      await productRef.delete();
+    }
+  }
+
+  alert("Deleted successfully");
+};
+
+const checkUserLogin = () => {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user || !user.emailVerified) {
+      window.location.href = "../auth.html";
+      return;
+    }
+
+    const userDocSnap = await getDoc(doc(db, "users", user.uid));
+    if (!userDocSnap.exists()) {
+      window.location.href = "../auth.html";
+      return;
+    }
+
+    userId = user.uid;
+    await fetchAndRenderPurchases();
+    toggleLoader(false);
+  });
+};
+
+// 🔹 Event & UI Binding
 document.addEventListener("DOMContentLoaded", () => {
   const loader = document.getElementById("loader");
   const menuButton = document.getElementById("menuButton");
@@ -198,82 +201,87 @@ document.addEventListener("DOMContentLoaded", () => {
   const cutBtn = document.getElementById("cutBtn");
   const showFormBtn = document.getElementById("showFormBtn");
   const purchaseFormContainer = document.getElementById("purchaseForm");
+  const purchaseTable = document.getElementById("purchaseTable");
+  purchaseTableBody = document.getElementById("purchaseTableBody");
   const addPurchaseForm = document.getElementById("addPurchaseForm");
 
-  // ✅ Set global table references
-  purchaseTable = document.getElementById("purchaseTable");
-  purchaseTableBody = document.getElementById("purchaseTableBody");
-
-  toggleLoader(true); // Initial loader on page load
-  checkUserLogin();   // Handles login check and data rendering
-
-  // Sidebar toggle
- menuButton?.addEventListener("click", () => {
-  if (sidebar) sidebar.classList.toggle("-translate-x-full");
-});
-cutBtn?.addEventListener("click", () => {
-  if (sidebar) sidebar.classList.add("-translate-x-full");
-});
-
-
- showFormBtn?.addEventListener("click", () => {
-    if (!purchaseFormContainer || !purchaseTable) return;
-
-   purchaseFormContainer.classList.toggle("hidden");
-
-    if (!purchaseForm.classList.contains("hidden")) {
-      // Form is now visible → hide table
-      purchaseTable.classList.add("hidden");
-    } else {
-      // Form is now hidden → show table
-      purchaseTable.classList.remove("hidden");
-    }
-  });
-
-addPurchaseForm?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const supplier = addPurchaseForm.supplier.value.trim();
-  const product = addPurchaseForm.product.value.trim();
-  const category = addPurchaseForm.category.value;
-  const quantity = addPurchaseForm.quantity.value;
-  const amount = addPurchaseForm.amount.value;
-  const date = addPurchaseForm.date.value;
-
-  if (!supplier || !product || !category || !quantity || !amount || !date) {
-    alert("Please fill all fields.");
-    return;
-  }
-
-  const nextId = "#P-" + (purchaseTableBody.rows.length + 1);
   toggleLoader(true);
-  await addPurchaseItemToDb({
-    supplier,
-    product,
-    category,
-    quantity,
-    amount,
-    date,
-    nextId,
+  checkUserLogin();
+
+  menuButton?.addEventListener("click", () => sidebar?.classList.toggle("-translate-x-full"));
+  cutBtn?.addEventListener("click", () => sidebar?.classList.add("-translate-x-full"));
+  showFormBtn?.addEventListener("click", () => {
+    purchaseFormContainer.classList.toggle("hidden");
+    purchaseTable.classList.toggle("hidden");
   });
-  toggleLoader(false);
 
-  addPurchaseForm.reset();
+  addPurchaseForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const { supplier, product, category, quantity, amount, date } = Object.fromEntries(new FormData(addPurchaseForm));
+    if (!supplier || !product || !category || !quantity || !amount || !date) return alert("All fields required");
 
-  // ✅ Hide form, Show table after save
-  purchaseFormContainer?.classList.add("hidden");
-  purchaseTable?.classList.remove("hidden");
+    toggleLoader(true);
 
-  await fetchAndRenderPurchases(); // ✅ Refresh table
-});
+    if (isEditMode && editData) {
+      await editPurchaseItem(editData.supplierId, editData.purchaseId, {
+        product, category, quantity: Number(quantity), amount: Number(amount),
+        date: Timestamp.fromDate(new Date(date))
+      });
+      
+      isEditMode = false;
+      editData = null;
 
+    } else {
+      const nextId = `#P-${purchaseTableBody.rows.length + 1}`;
+      await addPurchaseItemToDb({ supplier, product, category, quantity, amount, date, nextId });
+    alert('added successfully')
+    }
 
-  // UI Delete only
-  purchaseTableBody?.addEventListener("click", (e) => {
-    if (e.target.closest(".delete-btn")) {
-      const row = e.target.closest("tr");
-      row?.remove();
-      // ✅ You can later add Firestore delete logic here
+    addPurchaseForm.reset();
+    purchaseFormContainer.classList.add("hidden");
+    purchaseTable.classList.remove("hidden");
+    await fetchAndRenderPurchases();
+
+    toggleLoader(false);
+  });
+
+  purchaseTableBody?.addEventListener("click", async (e) => {
+    const target = e.target.closest("button");
+    if (!target) return;
+
+    const { fireid, purchaseid } = target.dataset;
+
+    if (target.classList.contains("delete-btn")) {
+      toggleLoader(true);
+      await deletePurchaseItem(fireid, purchaseid);
+      await fetchAndRenderPurchases();
+      toggleLoader(false);
+    }
+
+    if (target.classList.contains("edit-btn")) {
+      isEditMode = true;
+      editData = { supplierId: fireid, purchaseId: purchaseid };
+
+      const purchaseRef = doc(db, "users", userId, "purchase", fireid);
+      const purchaseSnap = await getDoc(purchaseRef);
+      if (!purchaseSnap.exists()) return;
+
+      const targetItem = (purchaseSnap.data().purchases || []).find(p => p.id === purchaseid);
+      if (targetItem) {
+        const form = addPurchaseForm;
+        form.supplier.value = fireid;
+        form.product.value = targetItem.product;
+        form.category.value = targetItem.category;
+        form.quantity.value = targetItem.quantity;
+        form.amount.value = targetItem.amount;
+        form.date.value = formatDate(targetItem.date);
+        purchaseFormContainer.classList.remove("hidden");
+        purchaseTable.classList.add("hidden");
+      }
     }
   });
 });
+
+
+// 🔐 Auth check
+

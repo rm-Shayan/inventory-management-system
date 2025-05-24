@@ -15,15 +15,17 @@ import {
   getDocs,
   onSnapshot,
   Timestamp,
-  deleteDoc
+  deleteDoc,
+  collectionGroup
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
+  signInWithEmailAndPassword,signOut ,
   sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 const firebaseConfig = {
   // your firebase config here
+  
 
 };
 
@@ -37,6 +39,7 @@ export {
    createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendEmailVerification,
+  signOut ,
   doc,
   getDoc,
   setDoc,
@@ -44,6 +47,7 @@ export {
   deleteDoc,
   arrayUnion,
   collection,
+  collectionGroup,
   addDoc,
   serverTimestamp,
   query,

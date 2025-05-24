@@ -1,3 +1,4 @@
+// firebase.js
 import {
   auth,
   db,
@@ -11,23 +12,24 @@ import {
   getDocs,
   setDoc,
   doc,
-  deleteDoc,
+  getDoc,
 } from "./firebase.js";
 
 // ELEMENTS
 const loader = document.getElementById("loader");
 const signUpForm = document.getElementById("signupForm");
 const loginForm = document.getElementById("loginForm");
- const go=document.querySelector('.go')
+const go = document.querySelector('.go');
+
 // Show or hide loader
- const toggleLoader = (show) => {
+const toggleLoader = (show) => {
   loader.classList.toggle("hidden", !show);
 };
 
 // 🔐 Check if user is logged in and redirect appropriately
 const emailVerifyMsg = document.getElementById("emailVerifyMsg");
 
- const checkUserLogin = () => {
+const checkUserLogin = () => {
   onAuthStateChanged(auth, async (user) => {
     toggleLoader(true);
 
@@ -43,25 +45,28 @@ const emailVerifyMsg = document.getElementById("emailVerifyMsg");
     // 📧 Check if email is verified
     if (!user.emailVerified) {
       if (emailVerifyMsg) emailVerifyMsg.classList.remove("hidden");
-      go?.classList.add('hidden')
+      go?.classList.add('hidden');
       toggleLoader(false);
       return;
     }
-    try {
-      const [isAdmin, isUser] = await Promise.all([
-        checkUserRole("admin", user.email),
-        checkUserRole("users", user.email),
-      ]);
 
-      if (isAdmin) {
+    try {
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        const role = userData.role;
+
         if (window.location.pathname.includes("/auth.html")) {
-          window.location.href = "../dashboard.html";
-        }
-      } else if (isUser) {
-        if (window.location.pathname.includes("/auth.html")) {
-          window.location.href = "../user.html";
+          if (role === "admin") {
+            window.location.href = "../dashboard.html";
+          } else {
+            window.location.href = "../dashboard.html";
+          }
         }
       } else {
+        // User document does not exist
         if (!window.location.pathname.includes("/auth.html")) {
           window.location.href = "../auth.html";
         }
@@ -73,15 +78,6 @@ const emailVerifyMsg = document.getElementById("emailVerifyMsg");
       toggleLoader(false);
     }
   });
-};
-
-
-// 🔍 Check if user exists in Firestore collection by email
-const checkUserRole = async (collectionName, email) => {
-  const snap = await getDocs(
-    query(collection(db, collectionName), where("email", "==", email))
-  );
-  return !snap.empty;
 };
 
 // 🧠 Handle signup/login form submission
@@ -111,39 +107,29 @@ const handleAuthForm = async (e, type) => {
   try {
     if (type === "signup") {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const userDocRef = doc(db, "users", cred.user.uid);
 
-      if (email !== "areesharao9@gmail.com") {
-        const userDocRef = doc(db, "users", cred.user.uid);
-        await setDoc(userDocRef, {
-          name,
-          email,
-          password,
-          role: "user",
-          createdAt: new Date().toISOString(),
-        });
-        console.log("✅ User document created");
-      } else {
-        console.log("🚫 Skipping Firestore write for areesharao9@gmail.com");
-      }
+      const role = email === "raomuhammadshayan897@gmail.com" ? "admin" : "user";
+
+      await setDoc(userDocRef, {
+        name,
+        email,
+        role,
+        createdAt: new Date().toISOString(),
+      });
 
       await sendEmailVerification(cred.user);
       alert("Signup successful! Verification email sent.");
-    
-      toggleLoader(true);
-     signUpForm.classList.add("hidden")
-      checkUserLogin()
 
+      toggleLoader(true);
+      signUpForm.classList.add("hidden");
+      checkUserLogin();
     } else {
       await signInWithEmailAndPassword(auth, email, password);
       alert("Login successful!");
-      
-  toggleLoader(true);
-  
-  checkUserLogin()
+      toggleLoader(true);
+      checkUserLogin();
     }
-
-
-
   } catch (err) {
     console.error("Auth Error:", err);
     alert(`Auth Error: ${err.message}`);
@@ -152,24 +138,20 @@ const handleAuthForm = async (e, type) => {
   }
 };
 
-
 // 🌐 On DOM ready
 document.addEventListener("DOMContentLoaded", () => {
   toggleLoader(true);
 
- if (signUpForm) {
-  signUpForm.addEventListener("submit", (e) => handleAuthForm(e, "signup"));
-}
-if (loginForm) {
-  loginForm.addEventListener("submit", (e) => handleAuthForm(e, "login"));
-}
+  if (signUpForm) {
+    signUpForm.addEventListener("submit", (e) => handleAuthForm(e, "signup"));
+  }
+  if (loginForm) {
+    loginForm.addEventListener("submit", (e) => handleAuthForm(e, "login"));
+  }
 
   checkUserLogin();
-
-  // Run this manually when you want to migrate admin docs
-//   migrateAdminDocsToUid();
 });
- export {
-  checkUserRole,
+
+export {
   toggleLoader,
- }
+};
