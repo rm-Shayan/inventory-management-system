@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Purchases | InventorySys</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom animations for forms */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOutUp {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .animate-fade-in-down {
+            animation: fadeInDown 0.3s ease-out forwards;
+        }
+
+        .animate-fade-out-up {
+            animation: fadeOutUp 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+    <div id="loader" class="hidden fixed inset-0 z-50 bg-white dark:bg-gray-900 flex flex-col items-center justify-center space-y-4 transition-colors duration-300">
+        <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-gray-700 dark:text-gray-300 text-lg font-medium tracking-wide">Loading InventorySys...</p>
+    </div>
+
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-md z-30 transform transition-transform duration-300 -translate-x-full md:translate-x-0">
+        <div class="p-6 relative border-b border-gray-200 dark:border-gray-700">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">InventorySys</h1>
+            <button id="cutBtn" class="absolute top-6 right-4 text-xl font-bold text-blue-800 dark:text-blue-400 cursor-pointer md:hidden">✕</button>
+        </div>
+        <nav class="mt-6">
+            <a href="index.html" class="block py-2.5 px-4 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-300">Dashboard</a>
+            <a href="purchases.html" class="block py-2.5 px-4 rounded bg-gray-200 text-gray-900 font-semibold dark:bg-gray-700 dark:text-white">Purchases</a>
+            <a href="sales.html" class="block py-2.5 px-4 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-300">Sales</a>
+            <a href="report.html" class="block py-2.5 px-4 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-300">Reports</a>
+            <a href="settings.html" class="block py-2.5 px-4 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition text-gray-700 dark:text-gray-300">Settings</a>
+        </nav>
+    </div>
+
+    <div class="md:ml-64 flex flex-col flex-1 min-h-screen">
+
+        <header class="flex items-center justify-between bg-white dark:bg-gray-800 p-4 shadow-md transition-colors duration-300">
+            <div class="flex items-center">
+                <button id="menuButton" class="md:hidden text-3xl text-gray-800 dark:text-gray-200 hover:text-gray-600 transition">&#9776;</button>
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-white ml-4">Purchases</h2>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <svg id="moonIcon" class="h-6 w-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 1 018.646 3.646 9.003 9.003 0 0012 21a9 9 0 008.354-5.646z"></path>
+                    </svg>
+                    <svg id="sunIcon" class="h-6 w-6 text-yellow-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h1M2 12h1m15.364 6.364l-.707.707M6.343 6.343l-.707-.707m12.728 0l-.707-.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                </button>
+
+                <button
+                    id="showFormBtn"
+                    class="bg-gradient-to-r from-green-400 to-blue-500 text-white py-2 px-6 rounded-md hover:from-green-500 hover:to-blue-600 transition font-semibold shadow-lg"
+                >
+                    <svg class="h-5 w-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    Add Purchase
+                </button>
+            </div>
+        </header>
+
+        <main class="p-6 space-y-6 flex-1">
+
+            <div id="purchaseFormContainer" class="hidden bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-xl mx-auto transition-colors duration-300">
+                <h3 class="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Add New Purchase</h3>
+                <form id="addPurchaseForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input
+                        type="text"
+                        name="supplier"
+                        placeholder="Supplier Name"
+                        class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        required
+                    />
+                    <input
+                        type="text"
+                        name="product"
+                        placeholder="Product Name"
+                        class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        required
+                    />
+
+                    <div class="relative">
+                        <select
+                            name="category"
+                            required
+                            class="appearance-none w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-3 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer"
+                        >
+                            <option value="" disabled selected>Select Category</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="furniture">Furniture</option>
+                            <option value="stationery">Stationery</option>
+                            <option value="groceries">Groceries</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="books">Books</option>
+                            <option value="food">Food</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <input
+                        type="number"
+                        name="quantity"
+                        placeholder="Quantity"
+                        class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        required
+                        min="1"
+                    />
+                    <input
+                        type="number"
+                        name="amount"
+                        placeholder="Total Amount (₨)"
+                        class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        required
+                        min="0"
+                        step="0.01"
+                    />
+                    <input
+                        type="date"
+                        name="date"
+                        class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-md p-3 w-full md:col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        required
+                    />
+
+                    <div class="flex justify-end col-span-1 md:col-span-2 space-x-4 mt-4">
+                        <button
+                            type="button"
+                            id="cancelFormBtn"
+                            class="bg-gray-300 text-gray-800 py-3 px-8 rounded-md hover:bg-gray-400 transition font-semibold dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="bg-gradient-to-r from-green-400 to-blue-500 text-white py-3 px-8 rounded-md hover:from-green-500 hover:to-blue-600 transition font-semibold shadow-lg"
+                        >
+                            <svg class="h-5 w-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>Add Purchase</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="purchaseTableContainer" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-colors duration-300">
+                <h3 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Purchase History</h3>
+                <div class="overflow-x-auto">
+                    <table id="purchaseTable" class="min-w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase text-sm leading-normal">
+                                <th class="py-3 px-4 sm:px-6 text-left">Purchase ID</th>
+                                <th class="py-3 px-4 sm:px-6 text-left">Supplier</th>
+                                <th class="py-3 px-4 sm:px-6 text-left">Product</th>
+                                <th class="py-3 px-4 sm:px-6 text-left">Category</th>
+                                <th class="py-3 px-4 sm:px-6 text-center">Quantity</th>
+                                <th class="py-3 px-4 sm:px-6 text-center">Amount</th>
+                                <th class="py-3 px-4 sm:px-6 text-center">Date</th>
+                                <th class="py-3 px-4 sm:px-6 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-700 dark:text-gray-200 text-sm font-light" id="purchaseTableBody">
+                            <tr><td colspan="8" class="text-center py-4 text-gray-500 dark:text-gray-400">Loading purchase history...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script type="module" src="js/firebase.js"></script>
+    <script type="module" src="js/purchase.js"></script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sales | InventorySys</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for better aesthetics, if desired */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; /* Tailwind gray-100 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* Tailwind gray-300 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; /* Tailwind gray-400 */
+        }
+        /* Dark mode scrollbar styles */
+        .dark ::-webkit-scrollbar-track {
+            background: #1f2937; /* Tailwind gray-800 */
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* Tailwind gray-600 */
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* Tailwind gray-500 */
+        }
+
+
+        /* Specific styles for form date input to hide placeholder */
+        input[type="date"]::-webkit-datetime-edit-text,
+        input[type="date"]::-webkit-datetime-edit-month-field,
+        input[type="date"]::-webkit-datetime-edit-day-field,
+        input[type="date"]::-webkit-datetime-edit-year-field {
+            -webkit-appearance: none;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        input[type="date"]::-webkit-inner-spin-button,
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            display: none;
+        }
+        input[type="date"] {
+            position: relative;
+        }
+        input[type="date"]::after {
+            content: '📅'; /* Calendar icon */
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #6b7280; /* Tailwind gray-500 */
+        }
+        /* Dark mode date input icon */
+        .dark input[type="date"]::after {
+            color: #9ca3af; /* Tailwind gray-400 */
+        }
+
+        /* Basic fade-in animation for form */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in-down {
+            animation: fadeInDown 0.3s ease-out forwards;
+        }
+
+        /* Basic fade-out animation for form */
+        @keyframes fadeOutUp {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+        .animate-fade-out-up {
+            animation: fadeOutUp 0.3s ease-in forwards;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-50 font-sans leading-normal tracking-normal text-gray-800 transition-colors duration-300
+             dark:bg-gray-900 dark:text-gray-100">
+
+    <div id="loader" class="hidden fixed inset-0 z-50 bg-white bg-opacity-80 flex flex-col items-center justify-center space-y-4 transition-opacity duration-300
+             dark:bg-gray-950 dark:bg-opacity-80">
+        <div class="w-20 h-20 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-blue-700 text-xl font-medium tracking-wide dark:text-blue-400">Loading InventorySys...</p>
+    </div>
+
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-30 transform transition-transform duration-300 -translate-x-full md:translate-x-0 border-r border-gray-100
+             dark:bg-gray-800 dark:border-gray-700">
+        <div class="p-6 relative border-b border-gray-100 dark:border-gray-700">
+            <h1 class="text-3xl font-extrabold text-blue-700 dark:text-blue-400">InventorySys</h1>
+            <button id="cutBtn" class="absolute top-6 right-4 text-2xl font-bold text-blue-800 cursor-pointer md:hidden hover:text-blue-600 transition dark:text-blue-300 dark:hover:text-blue-500">✕</button>
+        </div>
+        <nav class="mt-8 space-y-2 px-4">
+            <a href="index.html" class="block py-2.5 px-4 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition duration-200 ease-in-out flex items-center space-x-3
+                      dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-blue-400">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m0 0l7 7 7 7m0-7v7a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 00-1-1H9a1 1 0 00-1 1v4a1 1 0 001 1h6z"></path></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="block py-2.5 px-4 rounded-lg bg-blue-50 text-blue-700 font-semibold transition duration-200 ease-in-out flex items-center space-x-3
+                      dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                <span>Sales</span>
+            </a>
+            <a href="purchase.html" class="block py-2.5 px-4 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition duration-200 ease-in-out flex items-center space-x-3
+                      dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-blue-400">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V9m0 3v2m0 3.5v3.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Purchases</span>
+            </a>
+            <a href="report.html" class="block py-2.5 px-4 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition duration-200 ease-in-out flex items-center space-x-3
+                      dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-blue-400">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <span>Reports</span>
+            </a>
+            <a href="settings.html" class="block py-2.5 px-4 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition duration-200 ease-in-out flex items-center space-x-3
+                      dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-blue-400">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <span>Settings</span>
+            </a>
+        </nav>
+    </div>
+
+    <div class="md:ml-64 flex flex-col flex-1 min-h-screen bg-gray-50 dark:bg-gray-900">
+
+        <header class="flex items-center justify-between bg-white p-4 shadow-sm border-b border-gray-100 sticky top-0 z-20
+                 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center">
+                <button id="menuButton" class="md:hidden text-3xl text-gray-600 hover:text-gray-900 transition mr-4 dark:text-gray-300 dark:hover:text-gray-100">&#9776;</button>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Sales Overview</h2>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="themeToggle" class="p-2 rounded-full text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition
+                                      dark:text-gray-300 dark:hover:bg-gray-700 dark:focus:ring-blue-400">
+                    <svg id="moonIcon" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                    </svg>
+                    <svg id="sunIcon" class="h-6 w-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h1M3 12H2m8.003-4.003l.707-.707m-1.414 1.414L10 10m-.707-4.707l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                </button>
+
+                <button
+                    id="showFormBtn"
+                    class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-2.5 px-6 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 font-semibold shadow-md flex items-center space-x-2"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <span>Add New Sale</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="p-6 space-y-8 flex-1">
+
+            <section id="salesFormContainer" class="hidden bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto border border-gray-100 animate-fade-in-down
+                     dark:bg-gray-800 dark:border-gray-700">
+                <h3 class="text-2xl font-bold mb-8 text-gray-900 text-center dark:text-gray-100">Record New Sale</h3>
+                <form id="salesForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="customer" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Customer Name</label>
+                        <input
+                            type="text"
+                            id="customer"
+                            name="customer"
+                            placeholder="e.g., John Doe"
+                            class="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition duration-200 shadow-sm
+                                   dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label for="product" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Product Name</label>
+                        <input
+                            type="text"
+                            id="product"
+                            name="product"
+                            placeholder="e.g., Laptop, T-shirt"
+                            class="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition duration-200 shadow-sm
+                                   dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
+                            required
+                        />
+                    </div>
+
+                    <div class="relative">
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Category</label>
+                        <select
+                            id="category"
+                            name="category"
+                            required
+                            class="appearance-none w-full border border-gray-300 rounded-lg p-3 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition duration-200 cursor-pointer bg-white shadow-sm
+                                   dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                        >
+                            <option value="" disabled selected>Select Category</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="furniture">Furniture</option>
+                            <option value="stationery">Stationery</option>
+                            <option value="groceries">Groceries</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="books">Books</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 top-6 dark:text-gray-500">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Quantity</label>
+                        <input
+                            type="number"
+                            id="quantity"
+                            name="quantity"
+                            placeholder="e.g., 5"
+                            class="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition duration-200 shadow-sm
+                                   dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
+                            required
+                            min="1"
+                        />
+                    </div>
+                    <div>
+                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Total Amount (PKR)</label>
+                        <input
+                            type="number"
+                            id="amount"
+                            name="amount"
+                            placeholder="e.g., 3500.00"
+                            class="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition duration-200 shadow-sm
+                                   dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
+                            required
+                            min="0"
+                            step="0.01"
+                        />
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="date" class="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Sale Date</label>
+                        <input
+                            type="date"
+                            id="date"
+                            name="date"
+                            class="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition duration-200 shadow-sm
+                                   dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                            required
+                        />
+                    </div>
+
+                    <div class="flex flex-col md:flex-row md:col-span-2 gap-4 mt-4">
+                        <button
+                            type="submit"
+                            class="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-8 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 font-semibold shadow-md flex items-center justify-center space-x-2"
+                        >
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>Submit Sale</span>
+                        </button>
+                        <button
+                            type="button"
+                            id="cancelFormBtn"
+                            class="flex-1 bg-gray-200 text-gray-700 py-3 px-8 rounded-lg hover:bg-gray-300 transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 font-semibold shadow-md flex items-center justify-center space-x-2
+                                   dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:focus:ring-gray-500"
+                        >
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            <span>Cancel</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <section id="salesTableContainer" class="bg-white p-6 rounded-xl shadow-lg border border-gray-100
+                     dark:bg-gray-800 dark:border-gray-700">
+                <h3 class="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Sales History</h3>
+                <div class="overflow-x-auto relative shadow-sm rounded-lg border border-gray-200 dark:border-gray-600">
+                    <table class="min-w-full table-auto text-sm text-left text-gray-600 dark:text-gray-300">
+                        <thead class="bg-blue-50 text-blue-700 uppercase font-semibold text-xs sticky top-0 z-10
+                                dark:bg-blue-900 dark:text-blue-300">
+                            <tr>
+                                <th class="py-3 px-4">Sales ID</th>
+                                <th class="py-3 px-4">Customer</th>
+                                <th class="py-3 px-4">Product</th>
+                                <th class="py-3 px-4">Category</th>
+                                <th class="py-3 px-4 text-center">Qty</th>
+                                <th class="py-3 px-4 text-center">Amount (PKR)</th>
+                                <th class="py-3 px-4 text-center">Date</th>
+                                <th class="py-3 px-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700" id="salesTableBody">
+                            <tr class="bg-white hover:bg-gray-50 transition duration-150 ease-in-out
+                                    dark:bg-gray-800 dark:hover:bg-gray-700">
+                                <td class="py-3 px-4 whitespace-nowrap text-gray-800 dark:text-gray-200">#S-1001</td>
+                                <td class="py-3 px-4 whitespace-nowrap">ABC Corp</td>
+                                <td class="py-3 px-4 whitespace-nowrap">Office Chairs</td>
+                                <td class="py-3 px-4 whitespace-nowrap">Furniture</td>
+                                <td class="py-3 px-4 text-center whitespace-nowrap">10</td>
+                                <td class="py-3 px-4 text-center whitespace-nowrap">₨75,000</td>
+                                <td class="py-3 px-4 text-center whitespace-nowrap">2024-05-20</td>
+                                <td class="py-3 px-4 text-center whitespace-nowrap">
+                                    <div class="flex justify-center items-center space-x-2">
+                                        <button title="Edit" class="edit-sales-btn text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition
+                                                dark:text-blue-400 dark:hover:text-blue-200 dark:hover:bg-blue-900">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M16.5 3.5a2.121 2.121 0 113 3L12 14l-4 1 1-4 7.5-7.5z" />
+                                            </svg>
+                                        </button>
+                                        <button title="Delete" class="delete-sales-btn text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition
+                                                dark:text-red-400 dark:hover:text-red-200 dark:hover:bg-red-900">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a1 1 0 011 1v1H9V4a1 1 0 011-1zM4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="bg-gray-50 hover:bg-gray-100 transition duration-150 ease-in-out
+                                    dark:bg-gray-900 dark:hover:bg-gray-700">
+                                <td class="py-3 px-4 whitespace-nowrap text-gray-800 dark:text-gray-200">#S-1002</td>
+                                <td class="py-3 px-4 whitespace-nowrap">XYZ Traders</td>
+                                <td class="py-3 px-4 whitespace-nowrap">LED Bulbs</td>
+                                <td class="py-3 px-4 whitespace-nowrap">Electronics</td>
+                                <td class="py-3 px-4 text-center whitespace-nowrap">50</td>
+                                <td class="py-3 px-4 text-center whitespace-nowrap">₨3,500</td>
+                                <td class="py-3 px-4 text-center whitespace-nowrap">2025-05-18</td>
+                                <td class="py-3 px-4 text-center whitespace-nowrap">
+                                    <div class="flex justify-center items-center space-x-2">
+                                        <button title="Edit" class="edit-sales-btn text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition
+                                                dark:text-blue-400 dark:hover:text-blue-200 dark:hover:bg-blue-900">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M16.5 3.5a2.121 2.121 0 113 3L12 14l-4 1 1-4 7.5-7.5z" />
+                                            </svg>
+                                        </button>
+                                        <button title="Delete" class="delete-sales-btn text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition
+                                                dark:text-red-400 dark:hover:text-red-200 dark:hover:bg-red-900">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a1 1 0 011 1v1H9V4a1 1 0 011-1zM4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script type="module" src="js/firebase.js"></script>
+    <script type="module" src="js/sales.js"></script>
+</body>
+</html>
